@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMARTA: Financial Hero (Mario Bros Style)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #1a202c;
+            color: white;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 { margin-bottom: 5px; color: #3182ce; }
+        #game-ui {
+            width: 800px;
+            display: flex;
+            justify-content: space-between;
+            background: #2d3748;
+            padding: 10px 20px;
+            border-radius: 8px 8px 0 0;
+            box-sizing: border-box;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        canvas {
+            background: #63b3ed; /* Warna langit khas Mario */
+            border: 4px solid #2d3748;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        /* Style untuk Popup Pilihan Event */
+        #event-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            color: #2d3748;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.7);
+            width: 450px;
+            z-index: 10;
+        }
+        #event-popup h3 { margin-top: 0; color: #2b6cb0; }
+        .btn-choice {
+            display: block;
+            width: 100%;
+            background: #3182ce;
+            color: white;
+            border: none;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 14px;
+        }
+        .btn-choice:hover { background: #2b6cb0; }
+        #instructions {
+            margin-top: 15px;
+            color: #a0aec0;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>AMARTA: Financial Hero</h1>
+    <p style="margin-top: 0; color: #a0aec0;">Gunakan Panah Kiri/Kanan untuk Jalan, Panah Atas/Spasi untuk Lompat. Sundul kotak [?]!</p>
+
+    <!-- UI Bar Atas -->
+    <div id="game-ui">
+        <div>💰 Uang: Rp<span id="ui-money">900.000</span></div>
+        <div>❤️ Energi: <span id="ui-energy">100</span>%</div>
+        <div>🚩 Jarak ke Kelulusan: <span id="ui-progress">100</span>m</div>
+    </div>
+
+    <!-- Kanvas Game -->
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+    <div id="instructions">
+        Rintangan Merah = PINJOL/JUDOL (Hindari!) | Blok [?] = Keputusan Finansial Bulanan
+    </div>
+
+    <!-- Popup Pilihan Modul Finansial -->
+    <div id="event-popup">
+        <h3 id="popup-title">Keputusan Keuangan!</h3>
+        <p id="popup-desc">Deskripsi masalah keuangan...</p>
+        <div id="choices-container"></div>
+    </div>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // UI Elements
+    const uiMoney = document.getElementById("ui-money");
+    const uiEnergy = document.getElementById("ui-energy");
+    const uiProgress = document.getElementById("ui-progress");
+    const popup = document.getElementById("event-popup");
+
+    // Game Global State
+    let gameData = {
+        money: 900000,
+        energy: 100,
+        distanceLeft: 1500, // Jarak menuju bendera finish
+        isPaused: false,
+        gameOver: false,
+        victory: false
+    };
+
+    // Struktur Karakter (Mahasiswa) ala Mario
+    const player = {
+        x: 100,
+        y: 300,
+        width: 30,
+        height: 50,
+        speed: 5,
+        velX: 0,
+        velY: 0,
+        jumping: false,
+        grounded: false
+    };
+
+    const gravity = 0.6;
+    const friction = 0.8;
+
+    // Kumpulan Tombol Keyboard
+    const keys = {};
+
+    // Desain Level: Lantai, Blok [?], dan Musuh
+    const platforms = [
+        // Tanah dasar
+        { x: 0, y: 350, width: 2000, height: 50, type: 'ground' },
+        // Blok [?] Misteri (Trigger Pilihan Keuangan)
+        { x: 400, y: 220, width: 40, height: 40, type: 'question', id: 1, active: true },
+        { x: 800, y: 220, width: 40, height: 40, type: 'question', id: 2, active: true },
+        { x: 1200, y: 220, width: 40, height: 40, type: 'question', id: 3, active: true }
+    ];
+
+    // Musuh Berbahaya (Pinjol & Judol)
+    const enemies = [
+        { x: 600, y: 310, width: 40, height: 40, name: "PINJOL", speed: -1.5, direction: -1 },
+        { x: 1050, y: 310, width: 40, height: 40, name: "JUDOL", speed: -2, direction: -1 }
+    ];
+
+    // Bank Data Skenario Pilihan Finansial ketika Blok disundul
+    const financialEvents = {
+        1: {
+            title: "Bulan 1: Krisis Buku & Gaya Hidup",
+            desc: "Uang saku Rp900.000 menipis di minggu kedua. Teman kos mengajak patungan staycation sebesar Rp200.000. Apa tindakanmu?",
+            choices: [
+                { text: "Tolak tegas demi amankan pos Survival (Uang utuh, Energi -10)", money: 0, energy: -10 },
+                { text: "Ikut demi gengsi sosial, pakai uang kos (Uang -Rp200k, Energi +20)", money: -200000, energy: 20 }
+            ]
+        },
+        2: {
+            title: "Bulan 2: Laptop Rusak Mendadak",
+            desc: "Layar laptop bergaris menjelang UTS. Biaya servis kilat Rp150.000 sedangkan tabunganmu kosong!",
+            choices: [
+                { text: "Ambil kerja part-time malam hari (Uang +Rp100k, Energi -30)", money: 100000, energy: -30 },
+                { text: "Gunakan pinjol kilat ilegal (Uang -Rp250k di bulan depan, Energi -10)", money: -250000, energy: -10 }
+            ]
+        },
+        3: {
+            title: "Bulan 3: Proteksi Masa Depan",
+            desc: "Tubuhmu lelah akibat kuliah. Datang tawaran Asuransi Mikro Astra seharga Rp20.000 untuk jaminan kesehatan darurat.",
+            choices: [
+                { text: "Beli asuransi Astra sebagai manajemen risiko (Uang -Rp20k, Imun Aman)", money: -20000, energy: 5 },
+                { text: "Abaikan saja, uangnya buat beli kopi kekinian (Uang -Rp20k, Energi -10)", money: -20000, energy: -10 }
+            ]
+        }
+    };
+
+    // Event Listeners Keyboard
+    window.addEventListener("keydown", (e) => { keys[e.code] = true; });
+    window.addEventListener("keyup", (e) => { keys[e.code] = false; });
+
+    // Fungsi Deteksi Tabrakan (AABB Collision)
+    function colCheck(shapeA, shapeB) {
+        let vX = (shapeA.x + (shapeA.width / 2)) - (shapeB.x + (shapeB.width / 2)),
+            vY = (shapeA.y + (shapeA.height / 2)) - (shapeB.y + (shapeB.height / 2)),
+            hWidths = (shapeA.width / 2) + (shapeB.width / 2),
+            hHeights = (shapeA.height / 2) + (shapeB.height / 2),
+            colDir = null;
+
+        if (Math.abs(vX) < hWidths && Math.abs(vY) < hHeights) {
+            let oX = hWidths - Math.abs(vX),
+                oY = hHeights - Math.abs(vY);
+            if (oX >= oY) {
+                if (vY > 0) { colDir = "t"; shapeA.y += oY; } 
+                else { colDir = "b"; shapeA.y -= oY; }
+            } else {
+                if (vX > 0) { colDir = "l"; shapeA.x += oX; } 
+                else { colDir = "r"; shapeA.x -= oX; }
+            }
+        }
+        return colDir;
+    }
+
+    // Fungsi Memicu Dialog Finansial (Sundulan dari Bawah)
+    function triggerFinancialEvent(id) {
+        const ev = financialEvents[id];
+        if (!ev) return;
+        
+        gameData.isPaused = true;
+        document.getElementById("popup-title").innerText = ev.title;
+        document.getElementById("popup-desc").innerText = ev.desc;
+        
+        const container = document.getElementById("choices-container");
+        container.innerHTML = "";
+        
+        ev.choices.forEach(choice => {
+            const btn = document.createElement("button");
+            btn.className = "btn-choice";
+            btn.innerText = choice.text;
+            btn.onclick = () => {
+                gameData.money += choice.money;
+                gameData.energy += choice.energy;
+                popup.style.display = "none";
+                gameData.isPaused = false;
+                updateUI();
+                animate(); // Lanjutkan loop game
+            };
+            container.appendChild(btn);
+        });
+        
+        popup.style.display = "block";
+    }
+
+    function updateUI() {
+        uiMoney.innerText = gameData.money.toLocaleString('id-ID');
+        uiEnergy.innerText = gameData.energy;
+        uiProgress.innerText = Math.max(0, gameData.distanceLeft);
+
+        if (gameData.money <= 0 || gameData.energy <= 0) {
+            gameData.gameOver = true;
+        }
+    }
+
+    // Loop Utama Pergerakan Game (Animate)
+    function animate() {
+        if (gameData.isPaused) return;
+
+        if (gameData.gameOver) {
+            ctx.fillStyle = "rgba(0,0,0,0.8)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "red";
+            ctx.font = "bold 30px Arial";
+            ctx.fillText("GAME OVER: Finansial/Energi Habis!", 140, 200);
+            return;
+        }
+
+        // Kontrol input gerakan
+        if (keys["ArrowUp"] || keys["Space"]) {
+            if (!player.jumping && player.grounded) {
+                player.jumping = true;
+                player.grounded = false;
+                player.velY = -player.speed * 2.5; // Lompatan tinggi khas mario
+            }
+        }
+        if (keys["ArrowRight"]) {
+            if (player.velX < player.speed) player.velX++;
+        }
+        if (keys["ArrowLeft"]) {
+            if (player.velX > -player.speed) player.velX--;
+        }
+
+        // Geser Jarak (Kamera Berjalan)
+        if (player.velX > 0 && player.x > canvas.width / 2) {
+            gameData.distanceLeft -= Math.round(player.velX);
+        }
+
+        player.velX *= friction;
+        player.velY += gravity;
+
+        player.grounded = false;
+
+        // Bersihkan Layar & Gambar Langit
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Gambar Kamera Bergerak dengan Efek Parallax Tanah
+        ctx.save();
+        let offsetX = 0;
+        if (player.x > canvas.width / 2) {
+            offsetX = canvas.width / 2 - player.x;
+            ctx.translate(offsetX, 0);
+        }
+
+        // Menggambar Platform / Tanah & Blok [?]
+        ctx.fillStyle = "#8b4513"; // Warna tanah cokelat
+        platforms.forEach(p => {
+            if (p.type === 'ground') {
+                ctx.fillStyle = "#228b22"; // Atas rumput hijau
+                ctx.fillRect(p.x, p.y, p.width, 20);
+                ctx.fillStyle = "#8b4513"; // Bawah tanah cokelat
+                ctx.fillRect(p.x, p.y + 20, p.width, p.height - 20);
+            } else if (p.type === 'question') {
+                ctx.fillStyle = p.active ? "#ecc94b" : "#a0aec0"; // Kuning aktif, abu jika habis
+                ctx.fillRect(p.x, p.y, p.width, p.height);
+                ctx.fillStyle = "white";
+                ctx.font = "bold 20px Arial";
+                ctx.fillText(p.active ? "?" : "X", p.x + 14, p.y + 26);
+            }
+
+            // Cek Tabrakan Pemain dengan Platform
+            let dir = colCheck(player, p);
+            if (dir === "l" || dir === "r") {
+                player.velX = 0;
+                player.jumping = false;
+            } else if (dir === "b") {
+                player.grounded = true;
+                player.jumping = false;
+            } else if (dir === "t") {
+                player.velY = 0;
+                // Jika menyundul kotak misteri dari bawah
+                if (p.type === 'question' && p.active) {
+                    p.active = false;
+                    triggerFinancialEvent(p.id);
+                }
+            }
+        });
+
+        // Menggambar & Menggerakkan Musuh (Pinjol / Judol)
+        enemies.forEach(e => {
+            e.x += e.speed;
+            // Bolak-balik patroli musuh
+            if (e.x < 300 || e.x > 1500) e.speed = -e.speed;
+
+            ctx.fillStyle = "#e53e3e"; // Merah bahaya
+            ctx.fillRect(e.x, e.y, e.width, e.height);
+            ctx.fillStyle = "white";
+            ctx.font = "bold 10px Arial";
+            ctx.fillText(e.name, e.x + 2, e.y + 24);
+
+            // Tabrakan Karakter dengan Musuh Merah
+            if (colCheck(player, e)) {
+                gameData.money -= 300000; // Denda tabrak pinjol/judol besar!
+                gameData.energy -= 20;
+                player.x -= 80; // Efek terpental mundur
+                updateUI();
+                alert("Ouch! Kamu terjerat perangkap " + e.name + ". Uang menyusut Rp300.000!");
+            }
+        });
+
+        // Gambar Karakter Utama (Mahasiswa Hero)
+        player.x += player.velX;
+        player.y += player.velY;
+
+        ctx.fillStyle = "#3182ce"; // Biru pahlawan mahasiswa
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+        
+        // Gambar Mata Karakter agar terlihat arah jalannya
+        ctx.fillStyle = "white";
+        ctx.fillRect(player.x + (player.velX >= 0 ? 18 : 4), player.y + 10, 8, 8);
+
+        ctx.restore();
+
+        // Cek Batasan Bawah
+        if (player.y >= canvas.height - player.height) {
+            player.y = canvas.height - player.height;
+            player.jumping = false;
+        }
+
+        // Cek Kemenangan (Lulus)
+        if (gameData.distanceLeft <= 0) {
+            ctx.fillStyle = "rgba(0,0,0,0.85)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#38a169";
+            ctx.font = "bold 32px Arial";
+            ctx.fillText("🎉 SELAMAT! KAMU LULUS SEMESTER!", 130, 180);
+            ctx.fillStyle = "white";
+            ctx.font = "18px Arial";
+            ctx.fillText("Sisa Tabungan Akhir: Rp" + gameData.money.toLocaleString('id-ID'), 240, 230);
+            return;
+        }
+
+        updateUI();
+        requestAnimationFrame(animate);
+    }
+
+    // Jalankan Game Pertamakali
+    updateUI();
+    animate();
+</script>
+</body>
+</html>
