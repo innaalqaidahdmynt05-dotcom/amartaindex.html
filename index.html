@@ -24,10 +24,10 @@
             padding: 25px;
             box-sizing: border-box;
         }
-        h1 { text-align: center; color: #38bdf8; margin-top: 0; }
-        .subtitle { text-align: center; color: #94a3b8; margin-bottom: 25px; }
+        h1 { text-align: center; color: #38bdf8; margin-top: 0; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #94a3b8; margin-bottom: 25px; font-size: 14px; }
         
-        /* Dashboard Budget Per Item ala JagoMoneyQuest */
+        /* Dashboard Live Budget */
         #dashboard {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -52,13 +52,13 @@
         .budget-val { font-size: 14px; font-weight: bold; margin-top: 5px; }
         .budget-pct { font-size: 11px; color: #38bdf8; margin-top: 2px; }
 
-        /* Tabel Alokasi Mandiri */
+        /* Form Controls & Tables */
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #334155; }
         th { background: #334155; color: #38bdf8; }
-        input[type="number"] {
+        input[type="number"], select {
             width: 100%;
-            padding: 8px;
+            padding: 10px;
             border-radius: 4px;
             border: 1px solid #475569;
             background: #0f172a;
@@ -66,22 +66,25 @@
             box-sizing: border-box;
             font-size: 14px;
         }
-        .pct-output { font-weight: bold; color: #38bdf8; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #cbd5e1; }
+        .note-text { font-size: 12px; color: #94a3b8; margin-top: 4px; display: block; }
         
         .btn {
             background: #38bdf8;
             color: #0f172a;
             border: none;
-            padding: 12px 24px;
+            padding: 14px 24px;
             font-weight: bold;
             border-radius: 6px;
             cursor: pointer;
             width: 100%;
             font-size: 16px;
+            transition: 0.2s;
         }
         .btn:hover { background: #7dd3fc; }
         
-        /* Game Screen */
+        /* Game Screen components */
         .hidden { display: none !important; }
         .case-box {
             background: #334155;
@@ -111,22 +114,37 @@
             margin-bottom: 15px;
             font-weight: bold;
             color: #cbd5e1;
+            background: #0f172a;
+            padding: 10px 15px;
+            border-radius: 6px;
         }
-        #total-tracker {
-            font-weight: bold;
-            text-align: right;
-            margin-top: 10px;
-            font-size: 15px;
+        .system-log {
+            background: #1e293b;
+            border-left: 4px solid #f59e0b;
+            color: #f1f5f9;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 15px;
+            line-height: 1.5;
         }
+        .preview-box {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px dashed #475569;
+        }
+        .preview-box ul { margin: 5px 0 0 0; padding-left: 20px; font-size: 13px; color: #cbd5e1; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>AMARTA: Financial Simulator</h1>
-    <p class="subtitle">Rancang anggaranmu dari total beasiswa Rp900.000 dan ujilah kedisiplinanmu!</p>
+    <h1>AMARTA</h1>
+    <p class="subtitle">Financial & Health Simulator — Beasiswa Rp900.000</p>
 
-    <!-- LIVE DASHBOARD PAPAN SKOR -->
+    <!-- LIVE DASHBOARD ANGGARAN (MUNCUL SAAT GAME BERJALAN) -->
     <div id="dashboard" class="hidden">
         <div class="budget-item survival">
             <div class="budget-title">🛒 Survival</div>
@@ -150,253 +168,304 @@
         </div>
     </div>
 
-    <!-- TAHAP 1: FINANCIAL PLANNING (INPUT OTOMATIS HITUNG PERSEN) -->
-    <div id="setup-screen">
-        <h3>Langkah 1: Alokasikan Anggaran Beasiswamu (Total Harus Rp900.000)</h3>
+    <!-- ==================== SLIDE 1: ALOKASI UTAMA RAB ==================== -->
+    <div id="slide-rab">
+        <h3>Langkah 1: Perencanaan Perhitungan Per pos Anggaran (Wajib Pas Rp900.000)</h3>
         <table>
             <thead>
                 <tr>
                     <th>Pos Anggaran</th>
-                    <th>Nominal Input (Rp)</th>
-                    <th>Persentase Terhitung (%)</th>
+                    <th>Nominal Alokasi (Rp)</th>
+                    <th>Persentase</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td><strong>Survival</strong> (Makan, Minum, Pokok)</td>
-                    <td><input type="number" id="input-survival" value="0" oninput="liveCalculateData()"></td>
-                    <td><span class="pct-output" id="out-pct-survival">0.0%</span></td>
+                    <td><strong>Survival</strong> (Makan & Kebutuhan Pokok)</td>
+                    <td><input type="number" id="input-survival" value="500000" oninput="calculateRABPct()"></td>
+                    <td><span id="pct-survival" style="color:#38bdf8; font-weight:bold;">55.6%</span></td>
                 </tr>
                 <tr>
-                    <td><strong>Social & Academic</strong> (Buku, Nongkrong, Tugas)</td>
-                    <td><input type="number" id="input-social" value="0" oninput="liveCalculateData()"></td>
-                    <td><span class="pct-output" id="out-pct-social">0.0%</span></td>
+                    <td><strong>Social & Academic</strong> (Tugas, Buku, Relasi)</td>
+                    <td><input type="number" id="input-social" value="250000" oninput="calculateRABPct()"></td>
+                    <td><span id="pct-social" style="color:#38bdf8; font-weight:bold;">27.8%</span></td>
                 </tr>
                 <tr>
-                    <td><strong>Emergency & Risk</strong> (Kesehatan, Darurat)</td>
-                    <td><input type="number" id="input-emergency" value="0" oninput="liveCalculateData()"></td>
-                    <td><span class="pct-output" id="out-pct-emergency">0.0%</span></td>
+                    <td><strong>Emergency</strong> (Biaya Tak Terduga)</td>
+                    <td><input type="number" id="input-emergency" value="100000" oninput="calculateRABPct()"></td>
+                    <td><span id="pct-emergency" style="color:#38bdf8; font-weight:bold;">11.1%</span></td>
                 </tr>
                 <tr>
-                    <td><strong>Future</strong> (Tabungan Mandiri)</td>
-                    <td><input type="number" id="input-future" value="0" oninput="liveCalculateData()"></td>
-                    <td><span class="pct-output" id="out-pct-future">0.0%</span></td>
+                    <td><strong>Future</strong> (Tabungan / Investasi)</td>
+                    <td><input type="number" id="input-future" value="500000" oninput="calculateRABPct()"></td>
+                    <td><span id="pct-future" style="color:#38bdf8; font-weight:bold;">5.6%</span></td>
                 </tr>
             </tbody>
         </table>
-        
-        <div id="total-tracker" style="color: #ef4444;">Total Teralokasi: Rp0 / Rp900.000</div>
-
-        <div style="margin: 20px 0; background: #0f172a; padding: 15px; border-radius: 8px;">
-            <label><input type="checkbox" id="astra-insurance"> 🛡️ <strong>Gunakan Asuransi Garda Medika Astra (Rp20.000)</strong><br>
-            <span style="font-size: 12px; color: #94a3b8; margin-left: 20px; display: inline-block;">Diambil dari nominal pos Emergency. Memberikan jaminan biaya Rp0 (gratis) jika kamu sakit di tengah semester.</span></label>
-        </div>
-
-        <h3>Langkah 2: Tentukan Tempat Tinggal</h3>
-        <select id="input-housing" style="width: 100%; padding: 10px; background: #0f172a; color: white; border: 1px solid #475569; border-radius: 4px; margin-bottom: 25px;">
-            <option value="asrama">Asrama Kampus (Biaya Rp0)</option>
-            <option value="keluarga">Tinggal bersama Keluarga (Biaya Rp0)</option>
-            <option value="kos-ortu">Kos (Dibiayai ekstra oleh Orang Tua / Uang Beasiswa Utuh)</option>
-            <option value="kos-mandiri">Kos Mandiri (Potong Langsung Pos Survival Rp350.000 dari Beasiswa)</option>
-        </select>
-
-        <button class="btn" onclick="startSimulation()">Kunci Anggaran & Mulai Game</button>
+        <div id="rab-tracker" style="text-align:right; font-weight:bold; color:#10b981; margin-bottom:20px; font-size:16px;">Total: Rp900.000 / Rp900.000</div>
+        <button class="btn" onclick="goToSlideHousing()">Lanjut ke Pilihan Akomodasi</button>
     </div>
 
-    <!-- TAHAP 2: SIMULASI GAMEPLAY -->
+    <!-- ==================== SLIDE 2: PILIHAN TEMPAT TINGGAL & KENDARAAN ==================== -->
+    <div id="slide-housing" class="hidden">
+        <h3>Langkah 2: Profil Akomodasi & Pilihan Cabang</h3>
+        
+        <div class="form-group">
+            <label for="select-housing">Di mana kamu akan tinggal selama kuliah?</label>
+            <select id="select-housing" onchange="toggleHousingBranches()">
+                <option value="asrama">Asrama Kampus (Biaya Kos Rp0)</option>
+                <option value="keluarga">Tinggal dengan Keluarga / Rumah Sendiri (Biaya Kos Rp0)</option>
+                <option value="kos">Kos Pribadi</option>
+            </select>
+        </div>
+
+        <!-- Pencabangan Kondisional Khusus Anak Kos -->
+        <div id="kos-funding-group" class="form-group hidden">
+            <label for="select-kos-funding">Siapa yang membayar biaya kos tersebut?</label>
+            <select id="select-kos-funding" onchange="toggleKosNominalInput()">
+                <option value="ortu">Ditanggung Penuh Orang Tua (Rp0 dari Beasiswa)</option>
+                <option value="beasiswa">Dipotong dari Uang Beasiswa Mandiri</option>
+            </select>
+        </div>
+
+        <div id="kos-nominal-group" class="form-group hidden">
+            <label for="input-kos-price">Berapa biaya kos per bulan? (Langsung memotong Pos Survival)</label>
+            <input type="number" id="input-kos-price" value="300000">
+        </div>
+
+        <div class="form-group">
+            <label for="select-transport">Bagaimana mobilitas harianmu ke kampus?</label>
+            <select id="select-transport">
+                <option value="jalan">Jalan Kaki / Kendaraan Umum (Biaya Rp0, tapi kuras Energi/Kesehatan)</option>
+                <option value="motor">Membawa Kendaraan Pribadi / Motor (Bensin Rp5.000/hari, fisik santai)</option>
+            </select>
+        </div>
+
+        <button class="btn" onclick="goToSlideOperational()">Lanjut ke Belanja Bulanan</button>
+    </div>
+
+    <!-- ==================== SLIDE 3: OPERASIONAL & BELANJA BULANAN MANDIRI ==================== -->
+    <div id="slide-operational" class="hidden">
+        <h3>Langkah 3: Rencana Belanja Bulanan & Kebutuhan Rutin</h3>
+        <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">Nominal isian di bawah ini akan dihitung dan langsung memotong saldo awal pos anggaran sebelum masuk simulasi harian.</p>
+        
+        <div class="form-group">
+            <label for="input-ops-makan">Rencana Budget Makan Per Hari (Diambil dari Pos Survival):</label>
+            <input type="number" id="input-ops-makan" value="15000">
+            <span class="note-text">*Diakumulasikan untuk 10 siklus perkuliahan. Input 0 artinya melakukan penghematan ekstrem/puasa.</span>
+        </div>
+
+        <div class="form-group">
+            <label for="input-ops-sanitasi">Belanja Sabun, Odol, & Kebersihan Bulanan (Diambil dari Pos Survival):</label>
+            <input type="number" id="input-ops-sanitasi" value="40000">
+        </div>
+
+        <div class="form-group">
+            <label for="input-ops-kuota">Paket Kuota Data Internet & Tugas (Diambil dari Pos Social & Academic):</label>
+            <input type="number" id="input-ops-kuota" value="50000">
+        </div>
+
+        <div style="margin: 20px 0; background: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #334155;">
+            <label style="cursor: pointer; display: block;">
+                <input type="checkbox" id="astra-insurance" checked> 🛡️ <strong>Proteksi Asuransi Garda Medika Astra (Rp20.000)</strong>
+                <span class="note-text" style="margin-left: 22px;">Diambil dari pos Emergency. Memberikan jaminan klaim biaya berobat gratis Rp0 jika kamu mendadak jatuh sakit.</span>
+            </label>
+        </div>
+
+        <div class="preview-box">
+            <strong style="color: #38bdf8; font-size: 14px;">📋 Estimasi Saldo Bersih Awal setelah Kalkulasi Potongan Pokok:</strong>
+            <ul id="preview-list">
+                <li>Klik tombol di bawah untuk sinkronisasi preview saldo akhir...</li>
+            </ul>
+        </div>
+
+        <button class="btn" style="background: #10b981; color: white;" onclick="startSimulationGame()">Kunci Data & Mulai Simulasi Game</button>
+    </div>
+
+    <!-- ==================== STAGE GAMEPLAY UTAMA ==================== -->
     <div id="game-screen" class="hidden">
         <div class="status-bar">
-            <div>⚡ Energi: <span id="stat-energy">100</span>%</div>
+            <div>⚡ Energi Kebugaran: <span id="stat-energy">100</span>%</div>
+            <div>🏠 <span id="stat-profile-desc">Asrama</span></div>
             <div>📅 Kasus: <span id="stat-case-num">1</span> / 10</div>
         </div>
 
+        <!-- Log Notifikasi Pengurangan Harian Otomatis -->
+        <div id="daily-log-area" class="system-log"></div>
+
         <div class="case-box">
-            <h4 id="case-title">Judul Kasus</h4>
-            <p id="case-text">Pernyataan dilema...</p>
+            <h3 id="case-title" style="color: #38bdf8; margin-top:0; font-size:18px;">Judul Kasus</h3>
+            <p id="case-text" style="line-height:1.6; color:#e2e8f0; font-size:14px;">Pernyataan dilema pilihan kasus...</p>
         </div>
 
         <div id="choices-area"></div>
     </div>
 
-    <!-- TAHAP 3: REPORT SCORE -->
+    <!-- ==================== STAGE FINAL EVALUASI REPORT ==================== -->
     <div id="report-screen" class="hidden">
-        <h2>📊 Rapor Kesehatan Finansial Semestermu</h2>
-        <p id="report-desc"></p>
-        <div id="report-score" style="font-size: 24px; font-weight: bold; text-align: center; margin: 20px 0; color: #38bdf8;"></div>
-        <button class="btn" onclick="window.location.reload()">Reset & Atur Ulang Budget</button>
+        <h2>📊 Rapor Evaluasi Keuangan & Kesehatan AMARTA</h2>
+        <p id="report-desc" style="line-height:1.6; font-size:15px;"></p>
+        <div id="report-score" style="font-size: 26px; font-weight: bold; text-align: center; margin: 25px 0; color: #38bdf8; background:#0f172a; padding:15px; border-radius:8px;"></div>
+        <button class="btn" onclick="window.location.reload()">Ulangi & Perbaiki Strategi</button>
     </div>
 
 </div>
 
 <script>
+    // State Variabel Finansial & Kondisi Global
     let budget = { survival: 0, social: 0, emergency: 0, future: 0 };
     let energy = 100;
     let currentCaseIndex = 0;
-    let hasInsurance = false;
+    
+    // Penampung Data Input Pilihan Profil Player
+    let profile = { housing: '', funding: '', kosPrice: 0, transport: '' };
+    let ops = { makanPerHari: 0, sanitasi: 0, kuota: 0, hasInsurance: false };
     let alertLog = [];
 
-    // Fungsi Hitung Persentase Otomatis (Real-Time)
-    function liveCalculateData() {
+    // Trigger hitung pertama kali saat halaman di-load
+    window.onload = function() {
+        calculateRABPct();
+    };
+
+    // Fungsi Hitung Persentase Otomatis Slide 1
+    function calculateRABPct() {
         let s = parseInt(document.getElementById('input-survival').value) || 0;
         let c = parseInt(document.getElementById('input-social').value) || 0;
         let e = parseInt(document.getElementById('input-emergency').value) || 0;
         let f = parseInt(document.getElementById('input-future').value) || 0;
-
         let total = s + c + e + f;
 
-        document.getElementById('out-pct-survival').innerText = ((s / 900000) * 100).toFixed(1) + "%";
-        document.getElementById('out-pct-social').innerText = ((c / 900000) * 100).toFixed(1) + "%";
-        document.getElementById('out-pct-emergency').innerText = ((e / 900000) * 100).toFixed(1) + "%";
-        document.getElementById('out-pct-future').innerText = ((f / 900000) * 100).toFixed(1) + "%";
+        document.getElementById('pct-survival').innerText = ((s / 900000) * 100).toFixed(1) + "%";
+        document.getElementById('pct-social').innerText = ((c / 900000) * 100).toFixed(1) + "%";
+        document.getElementById('pct-emergency').innerText = ((e / 900000) * 100).toFixed(1) + "%";
+        document.getElementById('pct-future').innerText = ((f / 900000) * 100).toFixed(1) + "%";
 
-        let tracker = document.getElementById('total-tracker');
-        tracker.innerText = "Total Teralokasi: Rp" + total.toLocaleString('id-ID') + " / Rp900.000";
+        let tracker = document.getElementById('rab-tracker');
+        tracker.innerText = "Total: Rp" + total.toLocaleString('id-ID') + " / Rp900.000";
+        tracker.style.color = (total === 900000) ? "#10b981" : "#ef4444";
+    }
+
+    // Navigasi & Logika Validasi Slide 1 -> Slide 2
+    function goToSlideHousing() {
+        let s = parseInt(document.getElementById('input-survival').value) || 0;
+        let c = parseInt(document.getElementById('input-social').value) || 0;
+        let e = parseInt(document.getElementById('input-emergency').value) || 0;
+        let f = parseInt(document.getElementById('input-future').value) || 0;
         
-        if(total === 900000) {
-            tracker.style.color = "#10b981"; // Hijau kalau pas
+        if ((s+c+e+f) !== 900000) {
+            alert("Rencana Anggaran Biaya (RAB) awal wajib berjumlah pas Rp900.000!");
+            return;
+        }
+        
+        budget = { survival: s, social: c, emergency: e, future: f };
+        document.getElementById('slide-rab').classList.add('hidden');
+        document.getElementById('slide-housing').classList.remove('hidden');
+    }
+
+    // Logika Visibilitas Cabang Akomodasi Slide 2
+    function toggleHousingBranches() {
+        let hType = document.getElementById('select-housing').value;
+        if(hType === 'kos') {
+            document.getElementById('kos-funding-group').classList.remove('hidden');
+            toggleKosNominalInput();
         } else {
-            tracker.style.color = "#ef4444"; // Merah kalau belum pas
+            document.getElementById('kos-funding-group').classList.add('hidden');
+            document.getElementById('kos-nominal-group').classList.add('hidden');
+            document.getElementById('input-kos-price').value = 0; // Set 0 otomatis untuk Asrama/Keluarga
         }
     }
 
-    // LIST 10 KASUS REVISI TOTAL (REALISTIS & DILEMATIS)
-    const cases = [
-        {
-            title: "Kasus 1: Minggu Pertama & Jaket Angkatan",
-            text: "Komandan tingkat (Komting) menagih uang jaket angkatan sebesar Rp120.000 untuk kekompakan inaugurasi kampus. Nama mahasiswa yang menunggak akan dipajang di grup besar angkatan.",
-            choices: [
-                { text: "Bayar Lunas (Potong Pos Soc & Acad Rp120.000)", action: () => modifyBudget('social', -120000, 0) },
-                { text: "Nego mencicil / Menolak (Bayar Rp0, tetapi nama ditandai senior & Energi -15)", action: () => modifyBudget('social', 0, -15) }
-            ]
-        },
-        {
-            title: "Kasus 2: FOMO Perkuliahan & Nongki Kelompok",
-            text: "Geng satu kelompok makul penting mengajak bonding sekaligus ngerjain tugas di kafe fancy. Kebetulan kating holding magang idamanmu ada di sana. Biaya patungan makan minum Rp75.000.",
-            choices: [
-                { text: "Ikut demi relasi dan info magang (Potong Pos Soc & Acad Rp75.000, Energi +10)", action: () => modifyBudget('social', -75000, 10) },
-                { text: "Tolak dan masak mi instan di kos (Bayar Rp0, tapi kehilangan info magang & Energi -20)", action: () => modifyBudget('social', 0, -20) }
-            ]
-        },
-        {
-            title: "Kasus 3: Pembelian Buku Kuliah Utama",
-            text: "Dosen silabus utama mewajibkan setiap mahasiswa membeli buku teks asli seharga Rp100.000 karena lembar pengerjaan tugas mingguan langsung tercetak fisik di halaman belakang buku.",
-            choices: [
-                { text: "Beli Buku Fisik Asli (Potong Pos Soc & Acad Rp100.000, Nilai Aman)", action: () => modifyBudget('social', -100000, 0) },
-                { text: "Cari PDF ilegal / Fotokopi (Potong Pos Soc & Acad Rp20.000, risiko ditegur jika ketahuan)", action: () => modifyBudget('social', -20000, 0) }
-            ]
-        },
-        {
-            title: "Kasus 4: Krisis Tugas & Print Laporan Boncos",
-            text: "Laporan praktikum menumpuk di pertengahan bulan dan wajib kumpul fisik cetak tebal. Pos akademikmu ternyata sudah habis akibat kasus sebelumnya. Biaya cetak darurat total Rp45.000.",
-            choices: [
-                { text: "Gunakan anggaran pos lain untuk nalangin (Potong Pos Survival Rp45.000)", action: () => modifyBudget('survival', -45000, 0) },
-                { text: "Numpang print di kos teman (Bayar Rp0, tapi diganti bantu bersihkan kos mereka, Energi -25)", action: () => modifyBudget('survival', 0, -25) }
-            ]
-        },
-        {
-            title: "Kasus 5: Laptop Mati Mendadak Menjelang UTS",
-            text: "Laptop andalanmu mendadak mati total akibat sistem overheat pas malam pengerjaan tugas besar. Biaya servis pasrah di tukang komputer dekat kampus adalah Rp150.000.",
-            choices: [
-                { text: "Servis kilat pakai pos darurat (Potong Pos Emergency Rp150.000)", action: () => modifyBudget('emergency', -150000, 0) },
-                { text: "Batal servis, pinjam laptop teman bergantian (Bayar Rp0, tapi terpaksa begadang nunggu giliran, Energi -35)", action: () => modifyBudget('emergency', 0, -35) }
-            ]
-        },
-        {
-            title: "Kasus 6: Tubuh Tumbang di Pekan UTS",
-            text: "Akibat terlalu sering berhemat ekstrem dan telat makan, fisikmu drop total di pagi hari ujian UTS. Biaya penanganan medis di klinik terdekat adalah Rp100.000.",
-            choices: [
-                { text: "Berobat (Menggunakan jaminan Asuransi Astra jika punya / memotong Emergency Rp100.000)", action: () => handleSickness() },
-                { text: "Tahan di kamar kosan (Bayar Rp0, minum air hangat, tapi ujian berantakan karena pusing)", action: () => modifyBudget('emergency', 0, -30) }
-            ]
-        },
-        {
-            title: "Kasus 7: Ban Motor Bocor / Transportasi Darurat",
-            text: "Ban motormu robek terkena paku saat berangkat menuju kampus untuk mengumpulkan proyek akhir. Biaya tambal dan ganti ban dalam darurat adalah Rp60.000.",
-            choices: [
-                { text: "Gunakan Pos Emergency (Potong Rp60.000, tiba tepat waktu)", action: () => modifyBudget('emergency', -60000, 0) },
-                { text: "Nekat dorong dan naik angkot (Bayar Rp10.000 dari Survival, tapi telat dan nilai proyek dipotong dosen)", action: () => modifyBudget('survival', -10000, -15) }
-            ]
-        },
-        {
-            title: "Kasus 8: Godaan Pinjol Mahasiswa",
-            text: "Memasuki minggu ke-4, saldo ATM kritis. Di beranda media sosial muncul iklan aplikasi pinjol kilat khusus maba: 'Cair cepat Rp150.000 tanpa syarat untuk jajan'.",
-            choices: [
-                { text: "Tolak Pinjol! Cari sampingan jadi joki ketik semalam (Dapat tambahan Survival +Rp30.000, Energi -25)", action: () => modifyBudget('survival', 30000, -25) },
-                { text: "Ambil Pinjol (Dapat cash +Rp150.000 ke Survival, namun kena denda bunga utang di akhir skor)", action: () => { modifyBudget('survival', 150000, 0); alertLog.push("TERJERAT_PINJOL"); } }
-            ]
-        },
-        {
-            title: "Kasus 9: Krisis Sembako & Sanitasi Akhir Bulan",
-            text: "Beras habis, sabun mandi tinggal seiris, dan detergen habis total. Kamu tidak mungkin kuliah dengan baju bau apek, tapi dana tersisa sangat tipis. Paket sembako darurat seharga Rp60.000.",
-            choices: [
-                { text: "Beli Paket Lengkap (Menguras pos Future/Tabungan sebesar Rp60.000 demi kebersihan hidup)", action: () => modifyBudget('future', -60000, 0) },
-                { text: "Hemat Ekstrem (Kocok botol sabun pakai air, numpang detergen teman, Energi -20, lingkungan canggung)", action: () => modifyBudget('survival', 0, -20) }
-            ]
-        },
-        {
-            title: "Kasus 10: Puncak Akhir Bulan – Godaan Ayam Geprek Cheese",
-            text: "Minggu malam terakhir semesteran. Ujian beres dan kamu lelah mental. Kamar kosmu semerbak bau ayam geprek keju ojol pesanan teman-temanmu. Mereka mengajakmu patungan bareng seharga Rp35.000 untuk merayakan kebebasan.",
-            choices: [
-                { text: "Ikut Order Comfort Food (Beli ketenangan mental, potong paksa sisa Pos Future Rp35.000, Energi +25)", action: () => modifyBudget('future', -35000, 25) },
-                { text: "Tetap Makan Mi Instan Sisa (Disiplin anggaran selamat, tapi nyesek dan mental kelelahan)", action: () => modifyBudget('survival', 0, -15) }
-            ]
+    function toggleKosNominalInput() {
+        let fType = document.getElementById('select-kos-funding').value;
+        if(fType === 'beasiswa') {
+            document.getElementById('kos-nominal-group').classList.remove('hidden');
+            if(document.getElementById('input-kos-price').value == 0) {
+                document.getElementById('input-kos-price').value = 300000; // Reset ke default
+            }
+        } else {
+            document.getElementById('kos-nominal-group').classList.add('hidden');
+            document.getElementById('input-kos-price').value = 0; // Rp0 jika dibayar Ortu
         }
-    ];
+    }
 
-    function startSimulation() {
-        budget.survival = parseInt(document.getElementById('input-survival').value) || 0;
-        budget.social = parseInt(document.getElementById('input-social').value) || 0;
-        budget.emergency = parseInt(document.getElementById('input-emergency').value) || 0;
-        budget.future = parseInt(document.getElementById('input-future').value) || 0;
+    // Navigasi Slide 2 -> Slide 3 & Live Calc Realtime Preview
+    function goToSlideOperational() {
+        profile.housing = document.getElementById('select-housing').value;
+        profile.transport = document.getElementById('select-transport').value;
         
-        let total = budget.survival + budget.social + budget.emergency + budget.future;
-        if(total !== 900000) {
-            alert("Maaf, total alokasi anggaran wajib pas Rp900.000! Anggapan kamu sekarang: Rp" + total.toLocaleString('id-ID'));
-            return;
+        if(profile.housing === 'kos') {
+            profile.funding = document.getElementById('select-kos-funding').value;
+            if(profile.funding === 'beasiswa') {
+                profile.kosPrice = parseInt(document.getElementById('input-kos-price').value) || 0;
+            } else {
+                profile.kosPrice = 0;
+            }
+        } else {
+            profile.kosPrice = 0;
         }
 
-        if(document.getElementById('astra-insurance').checked) {
-            hasInsurance = true;
-            budget.emergency -= 20000; 
-        }
+        document.getElementById('slide-housing').classList.add('hidden');
+        document.getElementById('slide-operational').classList.remove('hidden');
+        
+        // Setup listener kalkulasi live preview saat user melakukan input
+        document.getElementById('input-ops-makan').addEventListener('input', updateLivePreview);
+        document.getElementById('input-ops-sanitasi').addEventListener('input', updateLivePreview);
+        document.getElementById('input-ops-kuota').addEventListener('input', updateLivePreview);
+        document.getElementById('astra-insurance').addEventListener('change', updateLivePreview);
+        updateLivePreview();
+    }
 
-        let housing = document.getElementById('input-housing').value;
-        if(housing === 'kos-mandiri') {
-            budget.survival -= 350000; 
-        }
+    // Fungsi Kalkulasi & Update Preview secara Realtime sebelum Game Dimulai
+    function updateLivePreview() {
+        let makan = (parseInt(document.getElementById('input-ops-makan').value) || 0) * 10;
+        let sanitasi = parseInt(document.getElementById('input-ops-sanitasi').value) || 0;
+        let kuota = parseInt(document.getElementById('input-ops-kuota').value) || 0;
+        let insCost = document.getElementById('astra-insurance').checked ? 20000 : 0;
 
-        document.getElementById('setup-screen').classList.add('hidden');
+        let previewSurvival = budget.survival - profile.kosPrice - sanitasi - makan;
+        let previewSocial = budget.social - kuota;
+        let previewEmergency = budget.emergency - insCost;
+
+        let listHtml = `
+            <li>🛒 <strong>Survival Bersih:</strong> Rp${previewSurvival.toLocaleString('id-ID')} <span style="font-size:11px; color:#94a3b8;">(Sudah dikurangi makan 10 hari & bulanan)</span></li>
+            <li>🎓 <strong>Soc & Acad Bersih:</strong> Rp${previewSocial.toLocaleString('id-ID')}</li>
+            <li>🚨 <strong>Emergency Bersih:</strong> Rp${previewEmergency.toLocaleString('id-ID')}</li>
+            <li>💰 <strong>Future Tetap:</strong> Rp${budget.future.toLocaleString('id-ID')}</li>
+        `;
+        document.getElementById('preview-list').innerHTML = listHtml;
+    }
+
+    // Kunci Data & Sinkronisasi Variabel ke Dashboard Utama
+    function startSimulationGame() {
+        ops.makanPerHari = parseInt(document.getElementById('input-ops-makan').value) || 0;
+        ops.sanitasi = parseInt(document.getElementById('input-ops-sanitasi').value) || 0;
+        ops.kuota = parseInt(document.getElementById('input-ops-kuota').value) || 0;
+        ops.hasInsurance = document.getElementById('astra-insurance').checked;
+
+        // Potong instan anggaran sesuai breakdown operasional awal yang dikunci user
+        budget.survival -= (profile.kosPrice + ops.sanitasi);
+        budget.social -= ops.kuota;
+        if(ops.hasInsurance) budget.emergency -= 20000;
+
+        // Set Label Header Profil di Dashboard Atas
+        let hLabel = (profile.housing === 'kos') ? 'Kos' : (profile.housing === 'asrama' ? 'Asrama' : 'Rumah Keluarga');
+        let tLabel = (profile.transport === 'motor') ? 'Motor' : 'Jalan Kaki';
+        document.getElementById('stat-profile-desc').innerText = `${hLabel} (${tLabel})`;
+
+        document.getElementById('slide-operational').classList.add('hidden');
         document.getElementById('dashboard').classList.remove('hidden');
         document.getElementById('game-screen').classList.remove('hidden');
 
-        updateDashboard();
-        showCase();
+        updateDashboardDisplay();
+        processNextCase();
     }
 
-    function modifyBudget(pos, amount, energyChange) {
-        budget[pos] += amount;
-        energy = Math.min(100, Math.max(0, energy + energyChange));
-        updateDashboard();
-        nextCase();
-    }
-
-    function handleSickness() {
-        if(hasInsurance) {
-            alert("Beruntung! Kamu dilindungi Asuransi Garda Medika Astra. Biaya pengobatan Rp0!");
-            modifyBudget('emergency', 0, 20); 
-        } else {
-            alert("Kamu tidak punya asuransi Astra. Pos Darurat dipotong Rp100.000!");
-            modifyBudget('emergency', -100000, 20);
-        }
-    }
-
-    function updateDashboard() {
+    function updateDashboardDisplay() {
         document.getElementById('dash-survival').innerText = "Rp" + budget.survival.toLocaleString('id-ID');
         document.getElementById('dash-social').innerText = "Rp" + budget.social.toLocaleString('id-ID');
         document.getElementById('dash-emergency').innerText = "Rp" + budget.emergency.toLocaleString('id-ID');
         document.getElementById('dash-future').innerText = "Rp" + budget.future.toLocaleString('id-ID');
         
-        // Update live persentase sisa di papan skor atas
         document.getElementById('dash-pct-survival').innerText = ((budget.survival / 900000) * 100).toFixed(1) + "%";
         document.getElementById('dash-pct-social').innerText = ((budget.social / 900000) * 100).toFixed(1) + "%";
         document.getElementById('dash-pct-emergency').innerText = ((budget.emergency / 900000) * 100).toFixed(1) + "%";
@@ -405,59 +474,222 @@
         document.getElementById('stat-energy').innerText = energy;
     }
 
-    function showCase() {
-        if(currentCaseIndex >= cases.length) {
-            endGame();
+    // DATABASE UTAMA 10 QUEST DILEMA HARIAN (3 OPSI)
+    const gameCases = [
+        {
+            title: "Kasus 1: Atribut Wajib Jaket Makrab Angkatan",
+            text: "Pengurus angkatan mewajibkan pembayaran atribut jaket angkatan senilai Rp120.000 untuk acara inagurasi minggu depan. Jika tidak membayar, namamu akan disorot di spreadsheet publik.",
+            getChoices: () => [
+                { text: "Bayar Penuh Sekarang (Potong Pos Soc & Acad Rp120.000, Relasi Aman)", action: () => applyChoiceEffects('social', -120000, 0) },
+                { text: "Nego Bayar Setengah Dulu (Potong Pos Soc & Acad Rp60.000, Energi -5 beban pikiran)", action: () => applyChoiceEffects('social', -60000, -5) },
+                { text: "Menolak Bayar (Bayar Rp0, tetapi dikucilkan di forum angkatan, Energi -20)", action: () => applyChoiceEffects('social', 0, -20) }
+            ]
+        },
+        {
+            title: "Kasus 2: Lokasi Kerja Kelompok & Info Magang Astra",
+            text: "Teman kelompok makul utamamu sepakat mengerjakan tugas akhir di sebuah kafe sejauh 4 KM di luar area kampus. Kebetulan ada kating berprestasi pembawa info magang Astra yang akan ikut hadir nongkrong.",
+            getChoices: () => {
+                let transCost = (profile.transport === 'motor') ? 5000 : 20000; // Jalan kaki/asrama dipaksa bayar ojol karena jarak jauh
+                return [
+                    { text: `Ikut & Pesan Menu Kafe (Potong Soc Rp50.000 + Ongkos Rp${transCost}, Energi +10 relasi)`, action: () => applyChoiceEffects('social', -(50000 + transCost), 10) },
+                    { text: `Hanya Hadir Tanpa Jajan (Potong Ongkos Rp${transCost}, menahan gengsi, Energi -10)`, action: () => applyChoiceEffects('social', -transCost, -10) },
+                    { text: "Tolak Hadir & Kerjakan di Kamar (Bayar Rp0, Kehilangan koneksi magang, Energi -20 beban ganda)", action: () => applyChoiceEffects('social', 0, -20) }
+                ];
+            }
+        },
+        {
+            title: "Kasus 3: Kewajiban Kepemilikan Buku Silabus Utama",
+            text: "Dosen mata kuliah inti mewajibkan kepemilikan buku teks komersial seharga Rp100.000 untuk pengumpulan lembar tugas besok pagi. Muncul info lapak fotokopi bajakan seharga Rp25.000 di area pasar sejauh 5 KM di luar gerbang kampus.",
+            getChoices: () => {
+                let transCost = (profile.transport === 'motor') ? 5000 : 25000;
+                return [
+                    { text: "Beli Buku Asli Langsung di Koperasi Kampus (Potong Soc & Acad Rp100.000, Instan & Aman)", action: () => applyChoiceEffects('social', -100000, 0) },
+                    { text: `Berburu Bajakan ke Luar Kampus (Potong Soc Rp25.000 + Ongkos Rp${transCost}, Energi -15 lelah)`, action: () => applyChoiceEffects('social', -(25000 + transCost), -15) },
+                    { text: "Pinjam Buku Teman & Salin Tulis Tangan (Bayar Rp0, Anggaran Selamat, Energi drop parah -35)", action: () => applyChoiceEffects('social', 0, -35) }
+                ];
+            }
+        },
+        {
+            title: "Kasus 4: Cetak Hardcopy Laporan Praktikum Tebal",
+            text: "Tugas praktikum menumpuk tengah bulan dan wajib dikumpulkan dalam bentuk fisik jilid tebal besok pagi. Biaya cetak total adalah Rp45.000 sedangkan pos akademikmu sudah kosong.",
+            getChoices: () => [
+                { text: "Pakai Sisa Uang Konsumsi Pokok (Potong Pos Survival Rp45.000)", action: () => applyChoiceEffects('survival', -45000, 0) },
+                { text: "Numpang Cetak di Rumah Saudara Jauh (Bayar Rp15.000 ongkos bensin/angkot, Energi -20 di jalan)", action: () => applyChoiceEffects('survival', -15000, -20) },
+                { text: "Barter Jasa Tolong Menolong (Bayar Rp0, tapi bantu bersihkan kamar kos teman sebagai gantinya, Energi -30)", action: () => applyChoiceEffects('survival', 0, -30) }
+            ]
+        },
+        {
+            title: "Kasus 5: Krisis Mobilitas Pagi Hari Ujian UTS (Poin 6)",
+            text: profile.transport === 'motor' ? 
+                "Sepeda motor andalanmu mendadak mengalami insiden bocor ban dalam akibat ranjau paku tajam saat mengejar jam masuk gerbang ujian UTS." :
+                "Kondisi cuaca luar berubah ekstrem dengan hujan badai lebat melanda pagi ini, sedangkan kamu harus mengumpulkan berkas UTS fisik tepat waktu.",
+            getChoices: () => {
+                if(profile.transport === 'motor') {
+                    return [
+                        { text: "Ganti Ban Cepat di Bengkel Terdekat (Potong Pos Emergency Rp60.000, Ujian Aman)", action: () => applyChoiceEffects('emergency', -60000, 0) },
+                        { text: "Titip Motor di Warung, Lanjut Naik Ojol Mobil (Potong Survival Rp25.000)", action: () => applyChoiceEffects('survival', -25000, -10) },
+                        { text: "Nekat Tuntun Motor Sampai Parkiran Kampus (Bayar Rp0, Energi drop parah -40)", action: () => applyChoiceEffects('survival', 0, -40) }
+                    ];
+                } else {
+                    return [
+                        { text: "Pesan Ojol Mobil / Taksi Online Darurat (Potong Pos Emergency Rp40.000, Baju Kering Ujian Aman)", action: () => applyChoiceEffects('emergency', -40000, 0) },
+                        { text: "Nekat Terobos Badai Pakai Payung Seadanya (Bayar Rp0, Fisik menggigil basah kuyup, Energi -30)", action: () => applyChoiceEffects('survival', 0, -30) },
+                        { text: "Menunggu Reda di Halte (Bayar Rp0, Finansial aman namun telat ikut ujian & Nilai UTS dipotong 30%)", action: () => applyChoiceEffects('social', 0, -15) }
+                    ];
+                }
+            }
+        },
+        {
+            title: "Kasus 6: Kesehatan Imun Tubuh Tumbang Akibat Drop",
+            text: "Akibat akumulasi kelelahan fisik di jalanan dan beban tugas perkuliahan, tubuhmu demam tinggi dan terserang flu berat.",
+            getChoices: () => [
+                { text: "Berobat Medis Ke Klinik (Klaim Asuransi Astra Proteksi Rp0 / Potong Darurat Rp100.000 jika absen asuransi)", action: () => handleKlinikSickness() },
+                { text: "Beli Obat Warung Eceran & Paksa Tidur (Potong Survival Rp15.000, Energi -15)", action: () => applyChoiceEffects('survival', -15000, -15) },
+                { text: "Tahan Tanpa Obat Demi Menghemat Saldo (Bayar Rp0, Sakit berkepanjangan, Energi -35)", action: () => applyChoiceEffects('survival', 0, -35) }
+            ]
+        },
+        {
+            title: "Kasus 7: Kehilangan Perangkat Data Flashdisk Kuliah",
+            text: "Flashdisk andalan yang berisi seluruh file presentasi tugas akhir dan rangkuman materi UAS terjatuh di koridor gedung kuliah umum.",
+            getChoices: () => [
+                { text: "Beli Unit Flashdisk Baru ke Toko Komputer (Potong Pos Emergency Rp75.000)", action: () => applyChoiceEffects('emergency', -75000, 0) },
+                { text: "Minta Salinan File Lama ke Teman (Bayar Rp0, Menanggung sungkan & Energi -15 untuk pengerjaan ulang)", action: () => applyChoiceEffects('social', 0, -15) },
+                { text: "Pasrah dengan Backup Cloud Seadanya (Bayar Rp0, Data kurang lengkap, Nilai tugas akhir berkurang)", action: () => applyChoiceEffects('social', 0, -10) }
+            ]
+        },
+        {
+            title: "Kasus 8: Jebakan Penawaran Instan Aplikasi Pinjol",
+            text: "Memasuki minggu krusial akhir bulan, sisa kas menipis tajam. Muncul notifikasi SMS dari aplikasi fintech ilegal menawarkan pencairan dana tunai instan Rp150.000.",
+            getChoices: () => [
+                { text: "Tolak Pinjol! Kerja Sampingan Joki Ketik Tugas Teman (Survival +Rp40.000, Energi -30 begadang)", action: () => applyChoiceEffects('survival', 40000, -30) },
+                { text: "Pinjam Dana Talangan Seikhlasnya ke Teman Kos (Survival +Rp50.000, Pos Sosial -10)", action: () => applyChoiceEffects('survival', 50000, -10) },
+                { text: "Ambil Pinjol Instan (Kas Masuk +Rp150.000 ke Survival, Kena beban bunga tinggi di evaluasi akhir)", action: () => { budget.survival += 150000; alertLog.push("PINJOL"); currentCaseIndex++; processNextCase(); } }
+            ]
+        },
+        {
+            title: "Kasus 9: Kehabisan Bahan Sembako & Sabun Cuci",
+            text: "Persediaan beras habis, sabun mandi tinggal sepotong kecil, dan detergen pakaian habis total secara bersamaan. Kamu dilema menghadapi bau baju kusut saat masuk kelas kuliah umum.",
+            getChoices: () => [
+                { text: "Bongkar Dana Tabungan Masa Depan (Potong Pos Future Rp60.000 untuk paket sembako lengkap)", action: () => applyChoiceEffects('future', -60000, 0) },
+                { text: "Beli Eceran Sachet Minimalis (Potong Survival Rp20.000, Hanya bertahan 3 hari)", action: () => applyChoiceEffects('survival', -20000, -5) },
+                { text: "Siasat Penghematan Ekstrem (Kocok botol air sabun, pinjam wewangian kawan, Energi -20)", action: () => applyChoiceEffects('survival', 0, -20) }
+            ]
+        },
+        {
+            title: "Kasus 10: Puncak Akhir Bulan – Godaan Perayaan UAS Selesai",
+            text: "Ujian Akhir Semester selesai ditempuh secara penuh. Kelompok belajarmu merayakan kebebasan dengan patungan memesan paket kombo ayam geprek susu ojol wangi semerbak senilai Rp35.000.",
+            getChoices: () => [
+                { text: "Ikut Merayakan Kebersamaan (Self-reward, potong paksa Pos Future Rp35.000, Energi +25)", action: () => applyChoiceEffects('future', -35000, 25) },
+                { text: "Makan Mi Instan Sisa Sendirian di Dapur Kos (Disiplin finansial aman, Energi -15)", action: () => applyChoiceEffects('survival', 0, -15) },
+                { text: "Hanya Ikut Nongkrong Tanpa Makan (Bayar Rp0, Rasa gengsi tertekan di lingkar sosial, Energi -10)", action: () => applyChoiceEffects('social', 0, -10) }
+            ]
+        }
+    ];
+
+    // Pemrosesan Konsekuensi Siklus Harian Otomatis (Poin 7)
+    function processNextCase() {
+        if(currentCaseIndex >= gameCases.length) {
+            evaluateFinalReport();
             return;
         }
-        
+
+        let logArea = document.getElementById('daily-log-area');
+        let txtLog = "";
+
+        // 1. Pengurangan Anggaran Makan Harian Otomatis
+        budget.survival -= ops.makanPerHari;
+        txtLog += `• Uang makan harian terpotong: -Rp${ops.makanPerHari.toLocaleString('id-ID')}. `;
+        if(ops.makanPerHari < 10000) {
+            energy -= 10; // Penalti lemas kelaparan jika input makan di awal terlalu minim (di bawah Rp10.000)
+            txtLog += `⚠️ Energi drop akibat asupan gizi makan minim harian! `;
+        }
+
+        // 2. Dampak Cabang Kendaraan pada Finansial & Kesehatan (Poin 7)
+        if(profile.transport === 'motor') {
+            budget.survival -= 5000; // Dikurangi bensin rutin Rp5.000
+            energy -= 5;             // Kesehatan / energi hanya turun sedikit
+            txtLog += `<br>• Konsumsi bensin harian motor: -Rp5.000 (Fisik stabil berkendara, Energi -5%).`;
+        } else {
+            // Jika Jalan Kaki / Kendaraan Umum
+            // Tidak dipotong biaya bensin harian (Rp0)
+            energy -= 18;            // Energi atau kesehatan terkuras lumayan banyak akibat kelelahan fisik di jalan
+            txtLog += `<br>• Mobilitas jalan kaki/umum: Rp0 bensin (Kondisi fisik lelah beraktivitas, Energi -18%).`;
+        }
+
+        energy = Math.min(100, Math.max(0, energy));
+        logArea.innerHTML = txtLog;
+
+        // Injeksi Konten Pertanyaan Kasus Berikutnya ke Interface
         document.getElementById('stat-case-num').innerText = currentCaseIndex + 1;
-        let c = cases[currentCaseIndex];
+        let c = gameCases[currentCaseIndex];
         document.getElementById('case-title').innerText = c.title;
         document.getElementById('case-text').innerText = c.text;
 
         let choicesArea = document.getElementById('choices-area');
         choicesArea.innerHTML = "";
         
-        c.choices.forEach((choice) => {
+        c.getChoices().forEach((choice) => {
             let btn = document.createElement('button');
             btn.className = "choice-btn";
             btn.innerText = choice.text;
             btn.onclick = choice.action;
             choicesArea.appendChild(btn);
         });
+
+        updateDashboardDisplay();
     }
 
-    function nextCase() {
+    function applyChoiceEffects(pos, amount, energyChange) {
+        budget[pos] += amount;
+        energy = Math.min(100, Math.max(0, energy + energyChange));
+        
+        if(budget[pos] < 0) {
+            energy -= 12; // Penalti stres domino tambahan jika dompet pos anggaran sampai defisit minus
+        }
+
         currentCaseIndex++;
-        showCase();
+        processNextCase();
     }
 
-    function endGame() {
+    // Penanganan Event Kesehatan Khusus (Mitigasi Risiko Asuransi Astra)
+    function handleKlinikSickness() {
+        if(ops.hasInsurance) {
+            alert("🛡️ ASURANSI ASTRA KLAIM SUKSES: Jaminan proteksi Garda Medika menanggung pengobatan. Total biaya Rp0!");
+            applyChoiceEffects('emergency', 0, 30);
+        } else {
+            alert("❌ PROTEKSI ABSEN: Kamu tidak mengaktifkan asuransi di awal. Saldo darurat terpotong paksa Rp100.000!");
+            applyChoiceEffects('emergency', -100000, 30);
+        }
+    }
+
+    // Evaluasi Penilaian Skor Akhir Kelayakan Beasiswa AMARTA
+    function evaluateFinalReport() {
         document.getElementById('game-screen').classList.add('hidden');
         document.getElementById('report-screen').classList.remove('hidden');
 
-        let totalSisa = budget.survival + budget.social + budget.emergency + budget.future;
-        let score = Math.round((totalSisa / 900000) * 50 + (energy / 100) * 50);
+        let totalSisaTabungan = budget.survival + budget.social + budget.emergency + budget.future;
+        let baseScore = Math.round((totalSisaTabungan / 900000) * 50 + (energy / 100) * 50);
         
-        if (alertLog.includes("TERJERAT_PINJOL")) score -= 25;
+        if (alertLog.includes("PINJOL")) baseScore -= 35; // Penalti berat instan jika terjerat pinjol bunga tinggi
+        if (budget.survival < 0 || budget.social < 0) baseScore -= 15;
+        baseScore = Math.min(100, Math.max(0, baseScore));
 
         let predikat = "";
-        let evaluasi = "";
+        let ulasan = "";
 
-        if(score >= 70 && budget.future >= 1000) {
-            predikat = "🏆 FINANCIAL GURU (Aman)";
-            evaluasi = "Hebat! Kamu berhasil mengalokasikan pos secara mandiri dan disiplin mengelolanya sampai akhir semester. Penggunaan mitigasi risiko di ekosistem Astra melindungimu dengan cerdas!";
-        } else if (score >= 45) {
-            predikat = "😐 SURVIVING STUDENT (Pas-pasan)";
-            evaluasi = "Kamu berhasil lulus, tapi beberapa pos keuanganmu jebol karena kurang disiplin menahan ego sosial. Evaluasi kembali caramu membagi persentase anggaran.";
+        if(baseScore >= 70 && energy >= 40) {
+            predikat = "🥇 LITERASI FINANSIAL SATU INDONESIA (Sangat Kuat)";
+            ulasan = "Luar biasa! Strategi penataan RAB awalmu terhitung sangat matang. Keputusan cerdas dalam mengalokasikan proteksi Asuransi Astra sukses menjadi benteng finansial yang melindungimu saat krisis kesehatan menerpa.";
+        } else if(baseScore >= 45 && energy >= 20) {
+            predikat = "🥈 ACADEMIC SURVIVOR (Cukup Bertahan)";
+            ulasan = "Kamu berhasil bertahan hingga akhir semester. Namun, manajemen kas harianmu kurang stabil sehingga memaksamu mengorbankan kondisi kebugaran fisik demi menghemat ongkos harian.";
         } else {
-            predikat = "🚨 FINANCIAL DISASTER (Zonk)";
-            evaluasi = "Manajemen keuanganmu gagal total. Kamu menguras tabungan future atau terjerat utang bunga pinjol di detik-detik akhir akibat panik finansial.";
+            predikat = "🚨 CRITICAL FINANCIAL COLLAPSE (Manajemen Gagal)";
+            ulasan = "Struktur pengelolaan dana beasiswamu berantakan. Mengambil opsi pinjol ilegal atau membiarkan pos primer defisit minus parah membuktikan manajemen risiko yang perlu dievaluasi total.";
         }
 
-        document.getElementById('report-score').innerText = "Skor Kelayakan: " + score + " / 100\n" + predikat;
-        document.getElementById('report-desc').innerText = evaluasi + "\n\nSisa dana akhir: Rp" + totalSisa.toLocaleString('id-ID') + " | Energi akhir: " + energy + "%.";
+        document.getElementById('report-score').innerText = `Skor Kelayakan: ${baseScore} / 100\n${predikat}`;
+        document.getElementById('report-desc').innerText = `${ulasan}\n\nSisa Dana Akumulasi Akhir: Rp${totalSisaTabungan.toLocaleString('id-ID')} | Tingkat Imun/Kebugaran Fisik Akhir: ${energy}%.`;
     }
 </script>
 </body>
