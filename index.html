@@ -232,8 +232,9 @@
         <div class="form-group">
             <label for="select-transport">Bagaimana mobilitas harianmu ke kampus?</label>
             <select id="select-transport">
-                <option value="jalan">Jalan Kaki / Kendaraan Umum (Biaya Bensin Rp0, Fisik lebih lelah)</option>
                 <option value="motor">Membawa Kendaraan Pribadi / Motor (Bensin Rp5.000/hari, Hemat waktu)</option>
+                <option value="umum">Menggunakan Kendaraan Umum / Angkot (Ongkos Rp5.000/hari, Hemat waktu)</option>
+                <option value="jalan">Jalan Kaki / Tanpa Keduanya (Biaya Rp0, Fisik lebih lelah)</option>
             </select>
         </div>
 
@@ -426,7 +427,10 @@
         if(ops.hasInsurance) budget.emergency -= 20000;
 
         let hLabel = (profile.housing === 'kos') ? 'Kos' : (profile.housing === 'asrama' ? 'Asrama' : 'Keluarga');
-        let tLabel = (profile.transport === 'motor') ? 'Motor' : 'Jalan/Umum';
+        let tLabel = 'Jalan Kaki';
+        if(profile.transport === 'motor') tLabel = 'Motor';
+        if(profile.transport === 'umum') tLabel = 'Angkot/Umum';
+        
         document.getElementById('stat-profile-desc').innerText = `${hLabel} (${tLabel})`;
 
         document.getElementById('slide-operational').classList.add('hidden');
@@ -467,7 +471,7 @@
             title: "Kasus 2: Mengerjakan Tugas Kelompok di Kafe",
             text: "Teman kelompok makul utamamu sepakat untuk kumpul kerja kelompok di kafe dekat kampus. Kamu tahu akan ada kating berprestasi pembawa info magang yang ikut nimbrung.",
             getChoices: () => {
-                let transCost = (profile.transport === 'motor') ? 5000 : 15000;
+                let transCost = (profile.transport === 'jalan') ? 15000 : 5000;
                 return [
                     { text: `Ikut & Pesan Menu Minimal (Potong Soc Rp40.000 + Transport Rp${transCost}, Energi +10)`, action: () => applyChoiceEffects('social', -(40000 + transCost), 10) },
                     { text: "Hanya numpang duduk tanpa pesan menu (Potong Transport saja, Energi -5 karena tidak enak dengan pelayan)", action: () => applyChoiceEffects('social', -transCost, -5) },
@@ -565,13 +569,14 @@
             txtLog += `⚠️ Energi berkurang karena porsi makan terlalu minim. `;
         }
 
-        if(profile.transport === 'motor') {
+        if(profile.transport === 'motor' || profile.transport === 'umum') {
             budget.survival -= 5000;
             energy -= 4;
-            txtLog += `<br>• Biaya operasional bensin motor harian: -Rp5.000 (Energi -4%).`;
+            let labelTrans = profile.transport === 'motor' ? 'bensin motor' : 'ongkos angkot';
+            txtLog += `<br>• Biaya operasional ${labelTrans} harian: -Rp5.000 (Energi -4%).`;
         } else {
             energy -= 14;
-            txtLog += `<br>• Mobilitas harian umum/jalan kaki: Rp0 (Fisik lebih lelah, Energi -14%).`;
+            txtLog += `<br>• Mobilitas jalan kaki/tanpa kendaraan: Rp0 (Fisik lebih lelah, Energi -14%).`;
         }
 
         energy = Math.min(100, Math.max(0, energy));
