@@ -452,14 +452,15 @@
         document.getElementById('stat-energy').innerText = energy;
     }
 
-    // 10 KASUS REALISTIS & AKURAT SEBAGAI MAHASISWA
+    // 10 KASUS REALISTIS & AKURAT DENGAN TIGA OPSI PILIHAN JAWABAN
     const gameCases = [
         {
             title: "Kasus 1: Atribut Wajib Jaket Angkatan",
             text: "Pengurus angkatan mendata iuran pemesanan jaket angkatan senilai Rp120.000 untuk acara resmi inagurasi. Pembayaran ditunggu minggu ini.",
             getChoices: () => [
-                { text: "Bayar Lunas (Potong Pos Soc & Acad Rp120.000)", action: () => applyChoiceEffects('social', -120000, 0) },
-                { text: "Nego minta keringanan waktu (Bayar Rp0, Beban pikiran, Energi -10)", action: () => applyChoiceEffects('social', 0, -10) }
+                { text: "Bayar Lunas Langsung (Potong Pos Soc & Acad Rp120.000, Energi aman)", action: () => applyChoiceEffects('social', -120000, 0) },
+                { text: "Bayar bertahap 2x (Potong Soc & Acad Rp60.000 sekarang, Energi -5 karena beban pikiran)", action: () => applyChoiceEffects('social', -60000, -5) },
+                { text: "Nego minta dispensasi waktu/tidak ikut pesan (Bayar Rp0, Energi -15 karena rasa canggung sosial)", action: () => applyChoiceEffects('social', 0, -15) }
             ]
         },
         {
@@ -469,7 +470,8 @@
                 let transCost = (profile.transport === 'motor') ? 5000 : 15000;
                 return [
                     { text: `Ikut & Pesan Menu Minimal (Potong Soc Rp40.000 + Transport Rp${transCost}, Energi +10)`, action: () => applyChoiceEffects('social', -(40000 + transCost), 10) },
-                    { text: "Minta gabung online / via Zoom saja (Bayar Rp0, Kehilangan momentum jejaring sosial, Energi -15)", action: () => applyChoiceEffects('social', 0, -15) }
+                    { text: "Hanya numpang duduk tanpa pesan menu (Potong Transport saja, Energi -5 karena tidak enak dengan pelayan)", action: () => applyChoiceEffects('social', -transCost, -5) },
+                    { text: "Minta gabung online / via Zoom saja (Bayar Rp0, Kehilangan momentum jejaring, Energi -15)", action: () => applyChoiceEffects('social', 0, -15) }
                 ];
             }
         },
@@ -477,8 +479,9 @@
             title: "Kasus 3: Kewajiban Kepemilikan Buku Teks Asli",
             text: "Dosen mata kuliah inti mewajibkan memiliki buku teks komersial seharga Rp100.000 karena kode tugas individu ada di dalam buku fisik tersebut.",
             getChoices: () => [
-                { text: "Beli Buku Asli di Koperasi Kampus (Potong Pos Soc & Acad Rp100.000)", action: () => applyChoiceEffects('social', -100000, 0) },
-                { text: "Cari opsi pinjam kakak tingkat atau cari salinan PDF (Potong Soc Rp20.000 untuk kas fotokopi tugas)", action: () => applyChoiceEffects('social', -20000, 0) }
+                { text: "Beli Buku Fisik Baru di Koperasi (Potong Pos Soc & Acad Rp100.000, Studi lancar)", action: () => applyChoiceEffects('social', -100000, 0) },
+                { text: "Cari opsi fotokopi atau beli buku bekas kating (Potong Pos Soc & Acad Rp40.000, Energi aman)", action: () => applyChoiceEffects('social', -40000, 0) },
+                { text: "Pinjam berkala di perpus / cari e-book gratis (Bayar Rp0, Harus rajin mencatat manual, Energi -15)", action: () => applyChoiceEffects('social', 0, -15) }
             ]
         },
         {
@@ -486,7 +489,8 @@
             text: "Laporan praktikum tengah semester menumpuk dan wajib dikumpulkan dalam bentuk fisik (print hardcopy). Biaya cetak mandiri di rental total Rp45.000.",
             getChoices: () => [
                 { text: "Gunakan Sisa Uang Pos Survival (Potong Pos Survival Rp45.000)", action: () => applyChoiceEffects('survival', -45000, 0) },
-                { text: "Numpang cetak di printer sekretariat UKM (Bayar Rp0, harus tukar bantuan bantu jaga piket, Energi -20)", action: () => applyChoiceEffects('survival', 0, -20) }
+                { text: "Gunakan Kertas Sendiri & Numpang Printer Teman (Potong Pos Survival Rp15.000 untuk beli kertas, Energi -5)", action: () => applyChoiceEffects('survival', -15000, -5) },
+                { text: "Numpang cetak di sekretariat UKM (Bayar Rp0, Harus ikut piket jaga sekre, Energi -20)", action: () => applyChoiceEffects('survival', 0, -20) }
             ]
         },
         {
@@ -494,15 +498,17 @@
             text: "Laptop andalanmu mengalami overheat parah saat pengerjaan UTS. Biaya servis pasrah di tukang servis komputer terdekat adalah Rp150.000.",
             getChoices: () => [
                 { text: "Servis Kilat Pakai Pos Darurat (Potong Pos Emergency Rp150.000)", action: () => applyChoiceEffects('emergency', -150000, 0) },
-                { text: "Batal servis, pinjam laptop teman kos secara bergantian (Bayar Rp0, Terpaksa begadang, Energi -30)", action: () => applyChoiceEffects('emergency', 0, -30) }
+                { text: "Gunakan tabungan jangka panjang (Potong Pos Future Rp150.000)", action: () => applyChoiceEffects('future', -150000, 0) },
+                { text: "Batal servis, pinjam bergantian di lab kampus (Bayar Rp0, Terpaksa begadang di lab, Energi -30)", action: () => applyChoiceEffects('emergency', 0, -30) }
             ]
         },
         {
             title: "Kasus 6: Kesehatan Menurun Saat Pekan Ujian",
             text: "Akibat pola tidur berantakan dan kelelahan selama pekan ujian, badanmu demam tinggi dan terserang flu berat.",
             getChoices: () => [
-                { text: "Berobat Medis ke Klinik Kesehatan (Manfaatkan Proteksi Asuransi Astra / Potong Emergency Rp100.000)", action: () => handleKlinikSickness() },
-                { text: "Beli Obat Warung Eceran & Istirahat di Kamar (Potong Survival Rp15.000, Energi -15)", action: () => applyChoiceEffects('survival', -15000, -15) }
+                { text: "Berobat Medis ke Klinik Kesehatan (Manfaatkan Asuransi Astra / Potong Emergency Rp100.000 jika tak ada)", action: () => handleKlinikSickness() },
+                { text: "Beli Obat Warung + Vitamin Tambahan (Potong Survival Rp35.000, Energi -5)", action: () => applyChoiceEffects('survival', -35000, -5) },
+                { text: "Beli Obat Eceran Murah & Istirahat di Kamar saja (Potong Survival Rp15.000, Energi -15)", action: () => applyChoiceEffects('survival', -15000, -15) }
             ]
         },
         {
@@ -510,15 +516,17 @@
             text: "Saat berangkat menuju kampus untuk ujian, kendaraan mengalami ban bocor akibat ranjau paku. Biaya tambal dan ganti ban dalam darurat Rp60.000.",
             getChoices: () => [
                 { text: "Ganti Ban Langsung (Potong Pos Emergency Rp60.000, Tiba tepat waktu)", action: () => applyChoiceEffects('emergency', -60000, 0) },
-                { text: "Titip kendaraan, naik angkutan umum seadanya (Potong Survival Rp10.000, Datang mepet, Energi -15)", action: () => applyChoiceEffects('survival', -10000, -15) }
+                { text: "Tambal sementara saja & pelan-pelan (Potong Pos Emergency Rp25.000, Energi -10 karena telat)", action: () => applyChoiceEffects('emergency', -25000, -10) },
+                { text: "Titip motor di warung, jalan kaki/naik angkot (Potong Survival Rp10.000, Energi -20 karena panik)", action: () => applyChoiceEffects('survival', -10000, -20) }
             ]
         },
         {
             title: "Kasus 8: Penawaran Dana Instan Pinjol",
             text: "Memasuki akhir bulan, kas menipis tajam. Muncul iklan aplikasi pinjaman online menawarkan pencairan cepat Rp150.000 khusus mahasiswa.",
             getChoices: () => [
-                { text: "Tolak Pinjol! Ambil Jasa Ketik Tugas Teman Semalaman (Dapat Survival +Rp40.000, Energi -25)", action: () => applyChoiceEffects('survival', 40000, -25) },
-                { text: "Ambil Pinjol Instan (Kas Masuk +Rp150.000 ke Survival, Terkena denda beban bunga di akhir)", action: () => { budget.survival += 150000; alertLog.push("PINJOL"); currentCaseIndex++; processNextCase(); } }
+                { text: "Tolak Pinjol! Ambil Jasa Ketik Tugas Teman (Dapat Survival +Rp40.000, Energi -25)", action: () => applyChoiceEffects('survival', 40000, -25) },
+                { text: "Tolak Pinjol! Puasa Sunah / Hemat Ekstrem (Bayar Rp0, Menghemat makan harian, Energi -15)", action: () => applyChoiceEffects('survival', 0, -15) },
+                { text: "Ambil Pinjol Instan (Kas Masuk +Rp150.000 ke Survival, Terkena penalti skor besar di akhir)", action: () => { budget.survival += 150000; alertLog.push("PINJOL"); currentCaseIndex++; processNextCase(); } }
             ]
         },
         {
@@ -526,15 +534,17 @@
             text: "Persediaan bahan makan pokok dan sabun cuci baju habis bersamaan di akhir bulan. Paket kebutuhan logistik dasar seharga Rp60.000.",
             getChoices: () => [
                 { text: "Ambil dari Anggaran Pos Future/Tabungan (Potong Pos Future Rp60.000)", action: () => applyChoiceEffects('future', -60000, 0) },
-                { text: "Beli Eceran Minimalis Dulu (Potong Survival Rp20.000, Harus lebih berhemat, Energi -15)", action: () => applyChoiceEffects('survival', -20000, -15) }
+                { text: "Gunakan Dana Darurat Tersisa (Potong Pos Emergency Rp60.000)", action: () => applyChoiceEffects('emergency', -60000, 0) },
+                { text: "Beli Ketengan Minimal Eceran Dulu (Potong Survival Rp20.000, Kebutuhan mepet, Energi -15)", action: () => applyChoiceEffects('survival', -20000, -15) }
             ]
         },
         {
             title: "Kasus 10: Perayaan Pasca Ujian Akhir Semester",
             text: "Seluruh rangkaian UAS selesai. Teman sekelas mengajak patungan memesan paket makanan bersama senilai Rp35.000 untuk merayakan kebersamaan.",
             getChoices: () => [
-                { text: "Ikut bergabung makan bersama (Potong Pos Future Rp35.000, Energi +20)", action: () => applyChoiceEffects('future', -35000, 20) },
-                { text: "Pilih pulang ke rumah/kos dan makan seadanya (Bayar Rp0, Finansial aman, Energi -10)", action: () => applyChoiceEffects('survival', 0, -10) }
+                { text: "Ikut bergabung merayakan penuh (Potong Pos Future Rp35.000, Energi +20)", action: () => applyChoiceEffects('future', -35000, 20) },
+                { text: "Hadir kumpul tanpa ikut makan/bawa minum sendiri (Potong Pos Social Rp10.000, Energi +5)", action: () => applyChoiceEffects('social', -10000, 5) },
+                { text: "Pilih langsung pulang ke rumah/kos (Bayar Rp0, Finansial aman, Energi -10 karena jenuh)", action: () => applyChoiceEffects('survival', 0, -10) }
             ]
         }
     ];
